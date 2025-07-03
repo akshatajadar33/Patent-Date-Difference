@@ -59,6 +59,7 @@ public class PatentSearchTest {
         // Step 4: Extract and calculate date differences from cards
         patentPage.extractFromFirstCardWithTwoDates();
         int cardsWithDates = patentPage.countCardsWithTwoOrMoreDates();
+        System.out.println("Number of cards with two or more dates: " + cardsWithDates);
         softAssert.assertTrue(cardsWithDates > 0, "At least one card with two or more dates should be present.");
 
 
