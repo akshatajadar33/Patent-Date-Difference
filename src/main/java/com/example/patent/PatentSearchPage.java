@@ -35,6 +35,7 @@ public class PatentSearchPage {
     public void clickSearch() {
         wait.until(ExpectedConditions.elementToBeClickable(searchButton)).click();
         System.out.println("Clicked Search button");
+        System.out.println("Clicked Search top");
     }
 
     // agree to terms and condition when pop up appears 
