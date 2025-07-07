@@ -4,13 +4,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public class PatentSearchTest {
@@ -21,6 +19,8 @@ public class PatentSearchTest {
     @BeforeClass
     public static void setup() {
 
+        io.github.bonigarcia.wdm.WebDriverManager.chromedriver().setup();
+
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--incognito");
 
@@ -29,7 +29,9 @@ public class PatentSearchTest {
         driver.manage().window().maximize();
 
 
-        driver.get("https://patinformed.wipo.int/");
+        String url = System.getProperty("baseUrl", "https://patinformed.wipo.int/");
+        driver.get(url);
+
 
         // Initialize the page object
         patentPage = new PatentSearchPage(driver);
@@ -42,7 +44,7 @@ public class PatentSearchTest {
         // Step 1: Search patents
         patentPage.clickSearch();
         List<WebElement> results = patentPage.getSearchResults();
-        softAssert.assertTrue(results.size() > 0, "Expected more than 0 search results ");
+        softAssert.assertTrue(!results.isEmpty(), "Expected more than 0 search results ");
 
 
 
