@@ -1,8 +1,6 @@
 package com.example.patent;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -24,20 +22,50 @@ public class PatentSearchPage {
     private By resultCardList = By.xpath("//ul[@class='results flex space-between']/descendant::li");
     private By fullCardItem = By.xpath("//ul[@class='results flex space-between']/descendant::li[@class='result card container showButtonsOnHover']");
     private By patentDetailRows = By.xpath(".//table[@class='patentDetails noBorder']/descendant::tr");
-
+    private By searchInput = By.xpath("//input[@class='searchField']");
     // Constructor for initialising driver and wait
     public PatentSearchPage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
-    // method for clicking on search button 
+    // method for clicking on search button
     public void clickSearch() {
-        wait.until(ExpectedConditions.elementToBeClickable(searchButton)).click();
+        String searchText = System.getProperty("searchText");
+        System.out.println("Search term from command line: " + searchText);
+
+        // Only send keys if searchText is not null and not empty
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(searchInput));
+            input.sendKeys(searchText);
+        } else {
+            System.out.println("No search text provided. Skipping entering text.");
+        }
+
+        // Wait for modal to disappear before clicking search
+        try {
+            WebDriverWait modalWait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            modalWait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("modalsHomepage")));
+            System.out.println("Modal disappeared.");
+        } catch (Exception e) {
+            System.out.println("Modal was not present or already gone.");
+        }
+
+        // Click the search button (try normal click, fallback to JS click)
+        WebElement searchBtn = wait.until(ExpectedConditions.elementToBeClickable(searchButton));
+        try {
+            searchBtn.click();
+        } catch (ElementClickInterceptedException e) {
+            System.out.println("Click intercepted. Retrying with JavaScript.");
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", searchBtn);
+        }
+
         System.out.println("Clicked Search button");
     }
 
-    // agree to terms and condition when pop up appears 
+
+
+    // agree to terms and condition when pop up appears
     public void acceptTermsIfPresent() {
         try {
             WebElement agreeBtn = wait.until(ExpectedConditions.elementToBeClickable(agreeButton));
@@ -67,7 +95,7 @@ public class PatentSearchPage {
     }
 
 
-    // to give the first result from the result list 
+    // to give the first result from the result list
     public WebElement getFirstResultElement() {
         List<WebElement> results = getSearchResults();
         if (!results.isEmpty()) {
