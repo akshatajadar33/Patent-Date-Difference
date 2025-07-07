@@ -166,7 +166,7 @@ public class PatentSearchPage {
                     }
                 }
 
-                // ✅ If it's the first card (index 0), break early
+                // If it's the first card (index 0), break early
                 if (i == 0) {
                     System.out.println("Card index 0 has two or more dates. Exiting early.");
                     return;
