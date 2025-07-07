@@ -6,16 +6,17 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PatentSearchPage {
 
     private WebDriver driver;
     private WebDriverWait wait;
 
-    //  Reusable Locators
+    // Locators
     private By searchButton = By.xpath("//button[@class='margin-right']");
     private By agreeButton = By.xpath("//div[@class='buttons flex space-around']//button[@class='green']");
     private By resultsListItems = By.xpath("//table[@class='results']//tbody/descendant::tr/descendant::td//li");
@@ -23,18 +24,16 @@ public class PatentSearchPage {
     private By fullCardItem = By.xpath("//ul[@class='results flex space-between']/descendant::li[@class='result card container showButtonsOnHover']");
     private By patentDetailRows = By.xpath(".//table[@class='patentDetails noBorder']/descendant::tr");
     private By searchInput = By.xpath("//input[@class='searchField']");
-    // Constructor for initialising driver and wait
+
     public PatentSearchPage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
-    // method for clicking on search button
     public void clickSearch() {
         String searchText = System.getProperty("searchText");
         System.out.println("Search term from command line: " + searchText);
 
-        // Only send keys if searchText is not null and not empty
         if (searchText != null && !searchText.trim().isEmpty()) {
             WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(searchInput));
             input.sendKeys(searchText);
@@ -42,7 +41,6 @@ public class PatentSearchPage {
             System.out.println("No search text provided. Skipping entering text.");
         }
 
-        // Wait for modal to disappear before clicking search
         try {
             WebDriverWait modalWait = new WebDriverWait(driver, Duration.ofSeconds(10));
             modalWait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("modalsHomepage")));
@@ -51,7 +49,6 @@ public class PatentSearchPage {
             System.out.println("Modal was not present or already gone.");
         }
 
-        // Click the search button (try normal click, fallback to JS click)
         WebElement searchBtn = wait.until(ExpectedConditions.elementToBeClickable(searchButton));
         try {
             searchBtn.click();
@@ -63,9 +60,6 @@ public class PatentSearchPage {
         System.out.println("Clicked Search button");
     }
 
-
-
-    // agree to terms and condition when pop up appears
     public void acceptTermsIfPresent() {
         try {
             WebElement agreeBtn = wait.until(ExpectedConditions.elementToBeClickable(agreeButton));
@@ -78,59 +72,42 @@ public class PatentSearchPage {
         }
     }
 
-    // get this list of the search
     public List<WebElement> getSearchResults() {
         wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(resultsListItems));
         return driver.findElements(resultsListItems);
     }
 
-    // to check wether we are getting results or no
     public boolean isResultsVisible() {
         try {
-            List<WebElement> results = driver.findElements(resultsListItems);
-            return !results.isEmpty();
+            return !driver.findElements(resultsListItems).isEmpty();
         } catch (Exception e) {
             return false;
         }
     }
 
-
-    // to give the first result from the result list
     public WebElement getFirstResultElement() {
         List<WebElement> results = getSearchResults();
-        if (!results.isEmpty()) {
-            return results.get(0); // Return the first result element
-        } else {
-            System.out.println("No search results found.");
-            return null;
-        }
+        return results.isEmpty() ? null : results.get(0);
     }
 
-    //To validate whether first result came or no
     public boolean isFirstResultPresent() {
         return getFirstResultElement() != null;
     }
 
-    // To click the first result
     public void clickFirstResult() {
         try {
             WebElement firstResult = getFirstResultElement();
             if (firstResult != null) {
                 wait.until(ExpectedConditions.elementToBeClickable(firstResult)).click();
-                String resultText = firstResult.getText().trim();
-                System.out.println("Clicked first search result: " + resultText);
+                System.out.println("Clicked first search result: " + firstResult.getText().trim());
             }
         } catch (Exception e) {
             System.out.println("Failed to click first result: " + e.getMessage());
         }
     }
 
-
-
-    // Extract date differences from first card that has at least two dates
     public void extractFromFirstCardWithTwoDates() {
         wait.until(ExpectedConditions.visibilityOfElementLocated(resultCardList));
-
         List<WebElement> cards = driver.findElements(fullCardItem);
         System.out.println("Total cards found: " + cards.size());
 
@@ -174,24 +151,36 @@ public class PatentSearchPage {
                             LocalDate date1 = LocalDate.parse(cleanedDate1, formatter);
                             LocalDate date2 = LocalDate.parse(cleanedDate2, formatter);
 
-                            long daysBetween = Math.abs(ChronoUnit.DAYS.between(date1, date2));
-                            System.out.println("Difference between " + dateLabels.get(m) + " and " + dateLabels.get(n) + ": " + daysBetween + " days");
+                            Period period = Period.between(date1, date2);
+
+                            int years = Math.abs(period.getYears());
+                            int months = Math.abs(period.getMonths());
+                            int days = Math.abs(period.getDays());
+
+                            System.out.println("Difference between " + dateLabels.get(m) + " and " + dateLabels.get(n) +
+                                    ": " + years + " years, " + months + " months, " + days + " days");
+
                         } catch (Exception e) {
-                            System.out.println("Error parsing dates: " + e.getMessage());
+                            System.out.println("Error parsing or comparing dates: " + e.getMessage());
                         }
                     }
                 }
 
-                break; // Stop after first valid card
+                // ✅ If it's the first card (index 0), break early
+                if (i == 0) {
+                    System.out.println("Card index 0 has two or more dates. Exiting early.");
+                    return;
+                }
             }
         }
     }
 
+
     public int countCardsWithTwoOrMoreDates() {
         wait.until(ExpectedConditions.visibilityOfElementLocated(resultCardList));
         List<WebElement> cards = driver.findElements(fullCardItem);
-
         int count = 0;
+
         for (WebElement card : cards) {
             List<WebElement> rows = card.findElements(patentDetailRows);
             int dateCount = 0;
@@ -199,6 +188,7 @@ public class PatentSearchPage {
             for (WebElement row : rows) {
                 List<WebElement> cells = row.findElements(By.tagName("td"));
                 if (cells.size() < 2) continue;
+
                 String label = cells.get(0).getText().trim();
 
                 if (label.equalsIgnoreCase("Filing date") ||
@@ -207,10 +197,9 @@ public class PatentSearchPage {
                     dateCount++;
                 }
             }
+
             if (dateCount >= 2) count++;
         }
         return count;
     }
-
-
 }

@@ -1,5 +1,5 @@
 package com.example.patent;
-
+import com.example.patent.PatentSearchPage;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -27,7 +27,6 @@ public class PatentSearchTest {
 
         driver = new ChromeDriver(options);
         driver.manage().window().maximize();
-
 
         String url = System.getProperty("baseUrl", "https://patinformed.wipo.int/");
         driver.get(url);
@@ -72,7 +71,7 @@ public class PatentSearchTest {
     @AfterClass
     public static void tearDown() {
         if (driver != null) {
-           driver.quit();
+            driver.quit();
         }
     }
 }
